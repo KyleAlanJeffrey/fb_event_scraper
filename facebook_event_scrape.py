@@ -8,14 +8,15 @@ import time
 
 if __name__ == "__main__":
     options = webdriver.ChromeOptions()
-    options.add_argument("headless")
+    options.add_argument('--headless=new')
 
-    chrome_driver = webdriver.Chrome()
+    chrome_driver = webdriver.Chrome(options=options)
 
     today = datetime.date.today()
-    url = f"https://www.facebook.com/events/?date_filter_option=TODAY&discover_tab=CUSTOM&end_date={today}T07%3A00%3A00.000Z&location_id=114952118516947&start_date={today}%3A00%3A00.000Z"
+    url = f"https://www.facebook.com/events/explore/us-san-francisco/114952118516947/today"
 
     chrome_driver.get(url)
+    time.sleep(1.5)
 
     # Scroll until the document doesnt grow
     page_height = chrome_driver.execute_script("return document.body.scrollHeight")
@@ -36,6 +37,7 @@ if __name__ == "__main__":
             events += more_events
 
     # Remove events not today
+    print(f"found events {len(events)}")
 
     events = list(
         filter(
@@ -46,27 +48,34 @@ if __name__ == "__main__":
             events,
         )
     )
+    print(f"found {len(events)} events today")
 
     # Parse popularity
     for event in events:
         popularity = event["node"]["social_context"]["text"]
         elems = popularity.split(" ")
+        # Set default numbers. Have some issue parsing the popularity
+        event["node"]["interested"] = 0
+        event["node"]["going"] = 0
         nums = []
         for elem in elems:
             if elem.isnumeric():
                 nums.append(int(elem))
-        if "interested" in popularity and "going" in popularity:
-            event["node"]["interested"] = nums[0]
-            event["node"]["going"] = nums[1]
-        elif "interested" in popularity and "going" not in popularity:
-            event["node"]["interested"] = nums[0]
-            event["node"]["going"] = 0
-        elif "interested" not in popularity and "going" in popularity:
-            event["node"]["interested"] = 0
-            event["node"]["going"] = nums[0]
-        else:
-            event["node"]["interested"] = 0
-            event["node"]["going"] = 0
+        try:
+            if "interested" in popularity and "going" in popularity:
+                event["node"]["interested"] = nums[0]
+                event["node"]["going"] = nums[1]
+            elif "interested" in popularity and "going" not in popularity:
+                event["node"]["interested"] = nums[0]
+                event["node"]["going"] = 0
+            elif "interested" not in popularity and "going" in popularity:
+                event["node"]["interested"] = 0
+                event["node"]["going"] = nums[0]
+            else:
+                event["node"]["interested"] = 0
+                event["node"]["going"] = 0
+        except Exception as e:
+            print(f"error parsing popularity {e}")
 
     events = sorted(
         events,
@@ -75,3 +84,4 @@ if __name__ == "__main__":
     )
     with open("data.json", "w") as f:
         json.dump(events, f)
+        print(f"Successfully parse {len(events)} for today in San Francisco")
