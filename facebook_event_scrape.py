@@ -8,7 +8,7 @@ import time
 
 if __name__ == "__main__":
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless=new')
+    options.add_argument("--headless=new")
 
     chrome_driver = webdriver.Chrome(options=options)
 
@@ -16,14 +16,14 @@ if __name__ == "__main__":
     url = f"https://www.facebook.com/events/explore/us-san-francisco/114952118516947/today"
 
     chrome_driver.get(url)
-    time.sleep(1.5)
+    time.sleep(12.0)
 
     # Scroll until the document doesnt grow
     page_height = chrome_driver.execute_script("return document.body.scrollHeight")
     prev_page_height = 0
     while page_height != prev_page_height:
         chrome_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(1.5)
+        time.sleep(7)
         prev_page_height = page_height
         page_height = chrome_driver.execute_script("return document.body.scrollHeight")
 
