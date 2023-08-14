@@ -13,19 +13,28 @@ if __name__ == "__main__":
     chrome_driver = webdriver.Chrome(options=options)
 
     today = datetime.date.today()
-    url = f"https://www.facebook.com/events/explore/us-san-francisco/114952118516947/today"
-
+    url = "https://www.facebook.com/events/explore/us-san-francisco/114952118516947"
+    print(f"Searching {url} for events in San Francisco")
     chrome_driver.get(url)
     time.sleep(12.0)
 
     # Scroll until the document doesnt grow
     page_height = chrome_driver.execute_script("return document.body.scrollHeight")
     prev_page_height = 0
-    while page_height != prev_page_height:
-        chrome_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(7)
-        prev_page_height = page_height
-        page_height = chrome_driver.execute_script("return document.body.scrollHeight")
+    try:
+        while page_height != prev_page_height:
+            chrome_driver.execute_script(
+                "window.scrollTo(0, document.body.scrollHeight);"
+            )
+            time.sleep(7)
+            prev_page_height = page_height
+            page_height = chrome_driver.execute_script(
+                "return document.body.scrollHeight"
+            )
+    except KeyboardInterrupt:
+        print("Keyboard interrupt")
+    except Exception as e:
+        print(e)
 
     events = []
     for request in chrome_driver.requests:
@@ -39,16 +48,16 @@ if __name__ == "__main__":
     # Remove events not today
     print(f"found events {len(events)}")
 
-    events = list(
-        filter(
-            lambda event: datetime.datetime.fromtimestamp(
-                event["node"]["start_timestamp"]
-            ).date()
-            == today,
-            events,
-        )
-    )
-    print(f"found {len(events)} events today")
+    # events = list(
+    #     filter(
+    #         lambda event: datetime.datetime.fromtimestamp(
+    #             event["node"]["start_timestamp"]
+    #         ).date()
+    #         == today,
+    #         events,
+    #     )
+    # )
+    # print(f"found {len(events)} events today")
 
     # Parse popularity
     for event in events:
@@ -82,6 +91,6 @@ if __name__ == "__main__":
         key=lambda event: event["node"]["interested"] + event["node"]["going"],
         reverse=True,
     )
-    with open("data.json", "w") as f:
+    with open("fb-events/public/events.json", "w") as f:
         json.dump(events, f)
         print(f"Successfully parse {len(events)} for today in San Francisco")
